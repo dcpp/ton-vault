@@ -1,0 +1,12 @@
+{
+  "name": "ton-vault",
+  "version": "1.0.0",
+  "description": "TON vault sample",
+  "scripts": {
+    "build": "scripts/build.sh"
+  },
+  "author": "Dmitriy Dolinin",
+  "license": "No License",
+  "dependencies": {
+  }
+}
