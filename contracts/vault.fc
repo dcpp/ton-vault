@@ -24,24 +24,33 @@ int Vault::NoOp() inline                { return 0xFFFFFFFF; }
 
 (slice, int) dict_get?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGET" "NULLSWAPIFNOT";
 
-;; create 264 bits slice from the (network, address) pair
-;; returns (slice address)
-slice pack_addr(int wc, int addr) {
-    return begin_cell().store_int(wc, 8).store_uint(addr, 256).end_cell().begin_parse();
+;;
+;; Serializes
+;; addr_std$10 anycast:(Maybe Anycast) workchain_id:int8 address:bits256 = MsgAddressInt;
+;; output is 267 bits
+;;
+slice pack_std_addr(int wc, int addr) {
+    return begin_cell()
+        .store_uint(2, 2)
+        .store_uint(0, 1)
+        .store_int(wc, 8)
+        .store_uint(addr, 256)
+        .end_cell()
+        .begin_parse();
 }
 
-;; decode TON standard address and pack to 264 bits slice
+;; decode TON standard address and pack to 267 bits slice
 ;; returns (slice address)
 slice pack_addr_from_std(slice addr) {
     (int addr_network, int addr_addr) = addr.parse_std_addr();
-    return pack_addr(addr_network, addr_addr);
+    return pack_std_addr(addr_network, addr_addr);
 }
 
 ;; add 'balances'
 ;; returns (cell balances, int result)
 (cell, int) add_balances(cell balances, slice from, int amount) {
     ;; look up for the sender address in the balances
-    (slice from_record, int from_found) = balances.dict_get?(264, from);
+    (slice from_record, int from_found) = balances.dict_get?(267, from);
     if (from_found == 0) {
         return (balances, Vault::WrongSender());
     }
@@ -51,7 +60,7 @@ slice pack_addr_from_std(slice addr) {
     from_balance = from_balance + amount;
 
     ;; update the sender balance
-    balances~dict_set_builder(264, from, begin_cell().store_uint(from_balance, 256));
+    balances~dict_set_builder(267, from, begin_cell().store_uint(from_balance, 256));
     return (balances, Vault::Ok());
 }
 
@@ -59,7 +68,7 @@ slice pack_addr_from_std(slice addr) {
 ;; returns (cell balances, int result)
 (cell, int) sub_balances(cell balances, slice from, int amount) {
     ;; look up for the sender address in the balances
-    (slice from_record, int from_found) = balances.dict_get?(264, from);
+    (slice from_record, int from_found) = balances.dict_get?(267, from);
     if (from_found == 0) {
         return (balances, Vault::WrongSender());
     }
@@ -72,7 +81,7 @@ slice pack_addr_from_std(slice addr) {
     from_balance = from_balance - amount;
 
     ;; update the sender balance
-    balances~dict_set_builder(264, from, begin_cell().store_uint(from_balance, 256));
+    balances~dict_set_builder(267, from, begin_cell().store_uint(from_balance, 256));
     return (balances, Vault::Ok());
 }
 
@@ -193,8 +202,7 @@ _ load_data() impure {
     ;; deposit grams
     ;; args ()
     if (op == ApiOps::Deposit()) {
-        int grams = in_msg~load_grams();
-        return deposit(sender, query_id, grams);
+        return deposit(sender, query_id, msg_value);
     }
 
     ;; withdraw grams
@@ -221,8 +229,8 @@ int balance() method_id {
 ;; get balance of user
 int balanceof(int from_network, int from_address) method_id {
 	(cell balances) = load_data();
-    slice from_address_full = pack_addr(from_network, from_address);
-    (slice sender_record, int sender_found) = balances.dict_get?(264, from_address_full);
+    slice packed = pack_std_addr(from_network, from_address);
+    (slice sender_record, int sender_found) = balances.dict_get?(267, packed);
     if (sender_found == 0) {
         return 0;
     }
