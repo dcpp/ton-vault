@@ -1398,6 +1398,13 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha1-x57Zf380y48robyXkLzDZkdLS3k=
 
+axios@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.25.0.tgz#349cfbb31331a9b4453190791760a8d35b093e0a"
+  integrity sha512-cD8FOb0tRH3uuEe6+evtAbgJtfxr7ly3fQjYcMcuPlgkwVS9xboaVIpcDV+cYQe+yGykgwZCs1pzjntcGa6l5g==
+  dependencies:
+    follow-redirects "^1.14.7"
+
 babel-jest@^27.5.1:
   version "27.5.1"
   resolved "https://registry.yarnpkg.com/babel-jest/-/babel-jest-27.5.1.tgz#a1bf8d61928edfefd21da27eb86a695bfd691444"
@@ -1917,6 +1924,11 @@ find-up@^4.0.0, find-up@^4.1.0:
   dependencies:
     locate-path "^5.0.0"
     path-exists "^4.0.0"
+
+follow-redirects@^1.14.7:
+  version "1.14.8"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.14.8.tgz#016996fb9a11a100566398b1c6839337d7bfa8fc"
+  integrity sha512-1x0S9UVJHsQprFcEC/qnNzBLcIxsjAV905f/UkQxbclCsoTWlacCNOpQa/anodLl2uaEKFhfWOvM2Qg77+15zA==
 
 form-data@^3.0.0:
   version "3.0.1"
@@ -3324,13 +3336,13 @@ ton-compiler@^0.9.0:
     arg "^5.0.1"
     tmp "^0.2.1"
 
-ton-contract-executor@^0.1.8:
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/ton-contract-executor/-/ton-contract-executor-0.1.9.tgz#fd36b10db6e9b153e0618cd5e198d557926a3c2a"
-  integrity sha512-oBUKdRUi1fq3PSpESFQPZwNqt5i6UhhHrdZfZhvnfWdgazRdipsJgZI2LAcVFglHlZag2hk4MekjukKn8bpGRw==
+ton-contract-executor@^0.2.6:
+  version "0.2.7"
+  resolved "https://registry.yarnpkg.com/ton-contract-executor/-/ton-contract-executor-0.2.7.tgz#62067a0dd2ade438593ce266bf9cac57be3d2e49"
+  integrity sha512-mr5N4EeI/SKPdnoNq4URJ8IDABczgGHTHtQfL/cRIX4IpE1wSfgutY5/MR4n/UA2OjshedqeWUdZzwFVILjHpw==
   dependencies:
     bn.js "^5.2.0"
-    ton "^6.3.0"
+    ton "^8.1.1"
     ton-compiler "^0.9.0"
 
 ton-crypto-primitives@2.0.0:
@@ -3361,6 +3373,23 @@ ton@^6.3.0:
     io-ts "^2.2.16"
     io-ts-reporters "^2.0.0"
     isomorphic-unfetch "3.1.0"
+    symbol.inspect "1.0.1"
+    teslabot "^1.3.0"
+    ton-crypto "2.0.2"
+    tweetnacl "1.0.3"
+
+ton@^8.1.1:
+  version "8.1.1"
+  resolved "https://registry.yarnpkg.com/ton/-/ton-8.1.1.tgz#67ae7be52d1bcb0d41b550f3239029c4fd802be8"
+  integrity sha512-r5r8EsnXm/04PUwQh/jO2oDTRSlrbKHoR2vjTVHek0LBYb1oYUguESM06W6khRHKJHJdkhG25NG9QwAxWz0sKA==
+  dependencies:
+    axios "^0.25.0"
+    bn.js "5.2.0"
+    dataloader "^2.0.0"
+    ethjs-unit "0.1.6"
+    fp-ts "^2.11.1"
+    io-ts "^2.2.16"
+    io-ts-reporters "^2.0.0"
     symbol.inspect "1.0.1"
     teslabot "^1.3.0"
     ton-crypto "2.0.2"
