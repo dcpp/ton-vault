@@ -3,13 +3,19 @@ import {readFile} from 'fs/promises'
 import {SmartContract} from 'ton-contract-executor'
 import BN from "bn.js"
 
-const contractAddress = Address.parse('EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_0t')
-const myAddress = Address.parse('kQChmZFQneZ6AUXG-eBkqcw_8WI6HQTD4i0Z9OTpJIYDH03t')
+const myAddress = Address.parse('EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_0t')
+const contractAddress = Address.parse('kQChmZFQneZ6AUXG-eBkqcw_8WI6HQTD4i0Z9OTpJIYDH03t')
+
+let gContract: SmartContract
 
 const getContract = async (source: string) => {
+    if (gContract) {
+        return gContract;
+    }
     let data = new Cell()
     data.bits.writeUint(0, 1)        
-    return await SmartContract.fromFuncSource(source, data, { getMethodsMutate: true })
+    gContract = await SmartContract.fromFuncSource(source, data, { getMethodsMutate: true })
+    return gContract
 }
 
 describe('TON Vault', () => {
@@ -43,12 +49,13 @@ describe('TON Vault', () => {
         messageBody.bits.writeUint(2, 64) // query_id
 
         let res = await contract.sendInternalMessage(new InternalMessage({
-            to: contractAddress,
+            to: myAddress,
             from: myAddress,
-            value: new BN(10),
+            value: new BN(100),
             bounce: false,
             body: new CommonMessageInfo({ body: new CellMessage(messageBody) })
         }))
+        expect(res.exit_code).toEqual(0)
 
         res = await contract.invokeGetMethod('balance', []);
         expect(res.result[0]).toBeInstanceOf(BN)
@@ -58,6 +65,6 @@ describe('TON Vault', () => {
             [{ type: 'int', value: myAddress.workChain.toString(10) },
              { type: 'int', value: (new BN(myAddress.hash)).toString(10) }])
         expect(res.result[0]).toBeInstanceOf(BN)
-        expect(res.result[0].toNumber()).toEqual(0)
+        expect(res.result[0].toNumber()).toEqual(100)
     })
 })
