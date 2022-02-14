@@ -16,12 +16,13 @@ int Vault::NoOp() inline                { return 0xFFFFFFFF; }
 ;; ---------------------------------- state
 
 ;; storage : {
-;;   uint1 inited,
 ;;   balances : {
 ;;     slice address : uint256 amount
 ;;   }
 
 ;; ---------------------------------- pure functions
+
+(slice, int) dict_get?(cell dict, int key_len, slice index) asm(index dict key_len) "DICTGET" "NULLSWAPIFNOT";
 
 ;; create 264 bits slice from the (network, address) pair
 ;; returns (slice address)
@@ -99,7 +100,6 @@ slice pack_addr_from_std(slice addr) {
     (cell balances) = ds;
     set_data(
         begin_cell()
-        .store_uint(1, 1)
         .store_dict(balances)
         .end_cell());
 }
@@ -107,7 +107,6 @@ slice pack_addr_from_std(slice addr) {
 ;; load data from the contract storage
 _ load_data() impure {
     slice ds = get_data().begin_parse();
-    int inited = ds~load_uint(1);   ;; inited state
     var res = (
         ds~load_dict()
     );
@@ -209,26 +208,18 @@ _ load_data() impure {
 }
 
 () recv_external(slice in_msg) impure {
-    slice ds = get_data().begin_parse();
-    int inited = ds~load_uint(1);
-    cell balances = ds~load_dict();
-    ds.end_parse();
-    throw_if(33, inited);
-    accept_message();
-
-    var res = (balances);
-    store_data(res);
+    ;; noop
 }
 
 ;; ---------------------------------- getters
 
 ;; get deposited total balance
-int getbalance() method_id {
+int balance() method_id {
 	return get_balance().pair_first();
 }
 
 ;; get balance of user
-int getbalanceof(int from_network, int from_address) method_id {
+int balanceof(int from_network, int from_address) method_id {
 	(cell balances) = load_data();
     slice from_address_full = pack_addr(from_network, from_address);
     (slice sender_record, int sender_found) = balances.dict_get?(264, from_address_full);

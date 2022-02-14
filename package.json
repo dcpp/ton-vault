@@ -2,11 +2,26 @@
   "name": "ton-vault",
   "version": "1.0.0",
   "description": "TON vault sample",
-  "scripts": {
-    "build": "scripts/build.sh"
-  },
   "author": "Dmitriy Dolinin",
   "license": "No License",
+  "scripts": {
+    "build": "scripts/build.sh",
+    "test": "npx jest test/vault.spec.ts"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.0",
+    "@babel/preset-env": "^7.16.4",
+    "@babel/preset-typescript": "^7.16.0",
+    "@types/jest": "^27.0.3",
+    "@types/node": "^16.11.7",
+    "jest": "^27.4.0",
+    "ts-node": "^10.4.0",
+    "typescript": "^4.4.4"
+  },
   "dependencies": {
+    "bn.js": "^5.2.0",
+    "ton": "^6.3.0",
+    "ton-compiler": "^0.9.0",
+    "ton-contract-executor": "^0.1.8"
   }
 }
