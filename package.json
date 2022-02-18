@@ -6,6 +6,7 @@
   "license": "No License",
   "scripts": {
     "build": "scripts/build.sh",
+    "deploy": "scripts/deploy.sh",
     "test": "npx jest test/vault.spec.ts"
   },
   "devDependencies": {

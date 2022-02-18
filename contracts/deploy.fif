@@ -1,0 +1,32 @@
+#!/usr/bin/fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+0 =: wc    // set workchain id from command line argument
+
+."Creating new vault in workchain " wc . cr
+
+"build/vault.fif" include =: code
+
+<b   
+  dictnew dict,
+b> =: data
+
+null =: libs // no libraries
+
+<b b{0011} s, code ref, data ref, libs dict, b> =: state_init
+
+state_init hashu wc swap 2dup 2constant contract_addr
+
+."New vault address = " 2dup .addr cr
+2dup "vault.addr" save-address-verbose
+."Non-bounceable address (for init): " 2dup 7 .Addr cr
+."Bounceable address (for later access): " 6 .Addr cr
+
+<b  b> =: init_msg
+
+<b b{1000100} s, contract_addr addr, b{000010} s, state_init <s s, b{0} s, init_msg <s s, b> =: external_msg
+external_msg 2 boc+>B
+
+"vault.boc" tuck B>file
+."(Saved dex creating query to file " type .")" cr
