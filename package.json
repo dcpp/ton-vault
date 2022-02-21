@@ -23,8 +23,8 @@
   },
   "dependencies": {
     "bn.js": "^5.2.0",
-    "ton": "^6.3.0",
+    "ton": "^8.1.1",
     "ton-compiler": "^0.9.0",
-    "ton-contract-executor": "^0.2.6"
+    "ton-contract-executor": "^0.2.7"
   }
 }
