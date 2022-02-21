@@ -215,7 +215,6 @@ _ load_data() impure {
 }
 
 () recv_external(slice in_msg) impure {
-    throw(Vault::NoOp());
 }
 
 ;; ---------------------------------- getters

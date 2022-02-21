@@ -1,0 +1,6 @@
+Creating new vault in workchain 0 
+New vault address = 0:c23b7c3c7a6ea9c4b3b0cc34f188ccb868f59fc7e0be45a1b084c68af08dc961 
+(Saving address to file vault.addr)
+Non-bounceable address (for init): 0QDCO3w8em6pxLOwzDTxiMy4aPWfx-C-RaGwhMaK8I3JYSeW
+Bounceable address (for later access): kQDCO3w8em6pxLOwzDTxiMy4aPWfx-C-RaGwhMaK8I3JYXpT
+(Saved vault creating query to file vault.boc)

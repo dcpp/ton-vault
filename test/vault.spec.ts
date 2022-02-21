@@ -1,4 +1,4 @@
-import {Address, Cell, CellMessage, CommonMessageInfo, InternalMessage} from 'ton'
+import {Address, Cell, CellMessage, CommonMessageInfo, ExternalMessage, InternalMessage} from 'ton'
 import {readFile} from 'fs/promises'
 import {SmartContract} from 'ton-contract-executor'
 import BN from "bn.js"
@@ -66,5 +66,16 @@ describe('TON Vault', () => {
              { type: 'int', value: (new BN(myAddress.hash)).toString(10) }])
         expect(res.result[0]).toBeInstanceOf(BN)
         expect(res.result[0].toNumber()).toEqual(100)
+    })
+
+    it('should send external message', async () => {
+        let contract = await getContract(source)
+
+        let res = await contract.sendExternalMessage(new ExternalMessage({
+            to: myAddress,
+            from: myAddress,
+            body: new CommonMessageInfo({ body: new CellMessage(new Cell()) })
+        }))
+        console.log(res);
     })
 })

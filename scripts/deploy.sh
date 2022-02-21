@@ -1,7 +1,5 @@
 #!/bin/bash
 
-rm -r build
-mkdir build
-func -AP -o build/vault.fif ../ton/crypto/smartcont/stdlib.fc contracts/vault.fc 
+lite-client -C global.config.json -c 'sendfile vault.boc'
 
-echo "Compilation completed"
+echo "Deployment completed"
