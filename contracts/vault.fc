@@ -105,23 +105,22 @@ slice pack_addr_from_std(slice addr) {
 }
 
 ;; save data in the contract storage
-() store_data(int initialised, cell balances) impure {
+() store_data(cell balances) impure {
     
     set_data(
         begin_cell()
-        .store_uint(initialised, 1)
+        .store_uint(1, 1)
         .store_dict(balances)
         .end_cell());
 }
 
 ;; load data from the contract storage
-(int ,cell) load_data() {
+(int, cell) load_data() {
     slice ds = get_data().begin_parse();
-    int initialised = ds~load_uint(1);
+    int initialized = ds~load_uint(1);
     cell dict = ds~load_dict();
     ds.end_parse();
-    return (initialised, dict);
-}
+    return (initialized, dict);
 }
 
 ;; send response for the deposit API call
@@ -135,7 +134,7 @@ slice pack_addr_from_std(slice addr) {
         return depositResponse(from, Vault::BadArg(), query_id);
     }
 
-    (cell balances) = load_data();
+    (int initialized, cell balances) = load_data();
     slice from_addr = pack_addr_from_std(from);
 
     (balances, int result) = add_balances(balances, from_addr, amount);
@@ -158,8 +157,8 @@ slice pack_addr_from_std(slice addr) {
     if (amount == 0) {
         return withdrawResponse(to, Vault::BadArg(), query_id, 0);
     }
-    var ds = load_data();
-    (cell balances) = ds;
+
+    (int initialized, cell balances) = load_data();
     slice to_addr = pack_addr_from_std(to);
 
     (balances, int result) = sub_balances(balances, to_addr, amount);
@@ -168,8 +167,7 @@ slice pack_addr_from_std(slice addr) {
         return withdrawResponse(to, result, query_id, 0);
     }
 
-    ds = (balances);
-    store_data(ds);
+    store_data((balances));
     return withdrawResponse(to, Vault::Ok(), query_id, amount);
 }
 
@@ -219,7 +217,7 @@ slice pack_addr_from_std(slice addr) {
     (int initialized, cell balances) = load_data();
     throw_unless(60, initialized == 0);
     accept_message();
-    store_data(1, balances);
+    store_data(balances);
 }
 
 ;; ---------------------------------- getters
@@ -231,7 +229,7 @@ int balance() method_id {
 
 ;; get balance of user
 int balanceof(int from_network, int from_address) method_id {
-	(cell balances) = load_data();
+	(int initialized, cell balances) = load_data();
     slice packed = pack_std_addr(from_network, from_address);
     (slice sender_record, int sender_found) = balances.dict_get?(267, packed);
     if (sender_found == 0) {
