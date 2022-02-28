@@ -3,8 +3,8 @@ import {readFile} from 'fs/promises'
 import {SmartContract} from 'ton-contract-executor'
 import BN from "bn.js"
 
-const myAddress = Address.parse('EQD4FPq-PRDieyQKkizFTRtSDyucUIqrj0v_zXJmqaDp6_0t')
-const contractAddress = Address.parse('kQChmZFQneZ6AUXG-eBkqcw_8WI6HQTD4i0Z9OTpJIYDH03t')
+const myAddress = Address.parse('EQA6rQndFwGsKh3p5YXHsHJqYSW4zudZioqFFNu6ia0r-6vH')
+const contractAddress = Address.parse('EQC22GK60Mn5W6kY4XTQIJIjL3vfvkObR-iKxSwNmKC1gYoC')
 
 let gContract: SmartContract
 
@@ -13,6 +13,7 @@ const getContract = async (source: string) => {
         return gContract;
     }
     let data = new Cell()
+    data.bits.writeUint(0, 1)        
     data.bits.writeUint(0, 1)        
     gContract = await SmartContract.fromFuncSource(source, data, { getMethodsMutate: true })
     return gContract
@@ -37,6 +38,8 @@ describe('TON Vault', () => {
         let address = new BN(myAddress.hash)
         let res = await contract.invokeGetMethod('balanceof',
             [{ type: 'int', value: myAddress.workChain.toString(10) }, { type: 'int', value: address.toString(10) }])
+
+        console.log(myAddress.hash);
         expect(res.result[0]).toBeInstanceOf(BN)
         expect(res.result[0].toNumber()).toEqual(0)
     })
@@ -49,7 +52,7 @@ describe('TON Vault', () => {
         messageBody.bits.writeUint(2, 64) // query_id
 
         let res = await contract.sendInternalMessage(new InternalMessage({
-            to: myAddress,
+            to: contractAddress,
             from: myAddress,
             value: new BN(100),
             bounce: false,
@@ -72,10 +75,9 @@ describe('TON Vault', () => {
         let contract = await getContract(source)
 
         let res = await contract.sendExternalMessage(new ExternalMessage({
-            to: myAddress,
+            to: contractAddress,
             from: myAddress,
             body: new CommonMessageInfo({ body: new CellMessage(new Cell()) })
         }))
-        console.log(res);
     })
 })

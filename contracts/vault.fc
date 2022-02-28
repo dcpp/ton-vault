@@ -183,11 +183,6 @@ slice pack_addr_from_std(slice addr) {
 
     int op = in_msg~load_uint(32);
 
-    ;; simple transfer with comment
-    if (op == ApiOps::None()) {
-        return();
-    }
-
     if (in_msg.slice_empty?()) {
         ;; inbound message has empty body
         throw(Vault::BadArg());
@@ -210,7 +205,7 @@ slice pack_addr_from_std(slice addr) {
         return withdraw(sender, query_id, grams);
     }
 
-    return throw(Vault::NoOp());
+    throw(Vault::NoOp());
 }
 
 () recv_external(slice in_msg) impure {
