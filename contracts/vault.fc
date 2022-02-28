@@ -11,7 +11,7 @@ int Vault::Ok() inline                  { return 0x80000000; }
 int Vault::WrongSender() inline         { return 0x80000001; }
 int Vault::BadArg() inline              { return 0x80000002; }
 int Vault::NoFunds() inline             { return 0x80000003; }
-int Vault::NoOp() inline                { return 0xFFFFFFFF; }
+int Vault::NoOp() inline                { return 0x80000004; }
 
 ;; ---------------------------------- state
 
@@ -174,6 +174,7 @@ slice pack_addr_from_std(slice addr) {
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
     slice cs = in_msg_cell.begin_parse();
     int flags = cs~load_uint(4);
+    slice sender = cs~load_msg_addr();
 
     ;; ignore all bounced messages
     ;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
@@ -181,16 +182,15 @@ slice pack_addr_from_std(slice addr) {
         return ();
     }
 
-    int op = in_msg~load_uint(32);
-
-    if (in_msg.slice_empty?()) {
+    if (in_msg.slice_bits() == 0) {
         ;; inbound message has empty body
-        throw(Vault::BadArg());
+        return ();
     }
 
-    int query_id = in_msg~load_uint(64);
+    int op = in_msg~load_uint(32);
+    (op, cs) = parse_msg(op, in_msg);
 
-    slice sender = cs~load_msg_addr();
+    int query_id = cs~load_uint(64);
 
     ;; deposit grams
     ;; args ()

@@ -23,7 +23,8 @@ describe('TON Vault', () => {
     let source: string
 
     beforeAll(async () => {
-        source = (await readFile('./contracts/vault.fc')).toString('utf-8')
+        source = (await readFile('./contracts/msg_hex_comment.fc')).toString('utf-8')
+        source += (await readFile('./contracts/vault.fc')).toString('utf-8')
     })
 
     it('should return total balance', async () => {
@@ -39,7 +40,6 @@ describe('TON Vault', () => {
         let res = await contract.invokeGetMethod('balanceof',
             [{ type: 'int', value: myAddress.workChain.toString(10) }, { type: 'int', value: address.toString(10) }])
 
-        console.log(myAddress.hash);
         expect(res.result[0]).toBeInstanceOf(BN)
         expect(res.result[0].toNumber()).toEqual(0)
     })
@@ -48,8 +48,9 @@ describe('TON Vault', () => {
         let contract = await getContract(source)
 
         let messageBody = new Cell()
-        messageBody.bits.writeUint(1, 32) // op
-        messageBody.bits.writeUint(2, 64) // query_id
+        messageBody.bits.writeUint(0, 32) // lead zeros
+        messageBody.bits.writeString("00000001") // op
+        messageBody.bits.writeString("0000000000000000") // query_id
 
         let res = await contract.sendInternalMessage(new InternalMessage({
             to: contractAddress,
