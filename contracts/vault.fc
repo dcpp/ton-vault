@@ -7,6 +7,9 @@ int ApiOps::None() inline               { return 0; }
 int ApiOps::Deposit() inline            { return 1; }
 int ApiOps::Withdraw() inline           { return 2; }
 
+int ApiEvent::Deposit() inline          { return 0x20000001; }
+int ApiEvent::Withdraw() inline         { return 0x20000002; }
+
 int Vault::Ok() inline                  { return 0x80000000; }
 int Vault::WrongSender() inline         { return 0x80000001; }
 int Vault::BadArg() inline              { return 0x80000002; }
@@ -27,19 +30,17 @@ int Vault::NoOp() inline                { return 0x80000004; }
 ;;
 ;; Serializes
 ;; addr_std$10 anycast:(Maybe Anycast) workchain_id:int8 address:bits256 = MsgAddressInt;
-;; output is 267 bits
+;; output is 264 bits
 ;;
 slice pack_std_addr(int wc, int addr) {
     return begin_cell()
-        .store_uint(2, 2)
-        .store_uint(0, 1)
         .store_int(wc, 8)
         .store_uint(addr, 256)
         .end_cell()
         .begin_parse();
 }
 
-;; decode TON standard address and pack to 267 bits slice
+;; decode TON standard address and pack to 264 bits slice
 ;; returns (slice address)
 slice pack_addr_from_std(slice addr) {
     (int addr_network, int addr_addr) = addr.parse_std_addr();
@@ -50,17 +51,18 @@ slice pack_addr_from_std(slice addr) {
 ;; returns (cell balances, int result)
 (cell, int) add_balances(cell balances, slice from, int amount) {
     ;; look up for the sender address in the balances
-    (slice from_record, int from_found) = balances.dict_get?(267, from);
+    (slice from_record, int from_found) = balances.dict_get?(264, from);
 
     int from_balance = 0; 
     if (from_found != 0) {
-        from_balance = from_record~load_uint(256);
+        from_balance = from_record~load_grams();
     }
 
     from_balance += amount;
 
     ;; update the sender balance
-    balances~dict_set_builder(267, from, begin_cell().store_uint(from_balance, 256));
+    balances~dict_set_builder(264, from, begin_cell().store_grams(from_balance));
+
     return (balances, Vault::Ok());
 }
 
@@ -68,7 +70,7 @@ slice pack_addr_from_std(slice addr) {
 ;; returns (cell balances, int result)
 (cell, int) sub_balances(cell balances, slice from, int amount) {
     ;; look up for the sender address in the balances
-    (slice from_record, int from_found) = balances.dict_get?(267, from);
+    (slice from_record, int from_found) = balances.dict_get?(264, from);
     if (from_found == 0) {
         return (balances, Vault::WrongSender());
     }
@@ -81,32 +83,31 @@ slice pack_addr_from_std(slice addr) {
     from_balance = from_balance - amount;
 
     ;; update the sender balance
-    balances~dict_set_builder(267, from, begin_cell().store_uint(from_balance, 256));
+    balances~dict_set_builder(264, from, begin_cell().store_uint(from_balance, 256));
+
     return (balances, Vault::Ok());
 }
 
 ;; ---------------------------------- impure functions
 
 ;; send message to another account
-() send_message(slice addr, int tag, int query_id, int body, int grams, int mode) impure {
+() send_message(slice to_addr, int action, int query_id, int grams, slice payload) impure {
 	;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool 
 	;;                src:MsgAddress -> 011000 0x18
 	builder msg = begin_cell()
 		.store_uint (0x18, 6)
-		.store_slice(addr)
+        .store_uint(0x4, 3)
+		.store_slice(to_addr)
 		.store_grams(grams)
 		.store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
-		.store_uint(tag, 32)
+		.store_uint(action, 32)
 		.store_uint(query_id, 64);
-	if (body >= 0) {
-		msg~store_uint(body, 32);
-	}
-	send_raw_message(msg.end_cell(), mode);
+
+	send_raw_message(msg.end_cell(), 64);
 }
 
 ;; save data in the contract storage
 () store_data(cell balances) impure {
-    
     set_data(
         begin_cell()
         .store_uint(1, 1)
@@ -123,15 +124,10 @@ slice pack_addr_from_std(slice addr) {
     return (initialized, dict);
 }
 
-;; send response for the deposit API call
-() depositResponse(slice to, int response, int query_id) impure {
-    return send_message(to, response, query_id, ApiOps::Deposit(), 0, 64);
-}
-
 ;; deposit 'amount' grams to the 'sender'
-() deposit(slice from, int query_id, int amount) impure {
+() deposit(slice from, int query_id, int amount, slice payload) impure {
     if (amount == 0) {
-        return depositResponse(from, Vault::BadArg(), query_id);
+        throw(Vault::BadArg());
     }
 
     (int initialized, cell balances) = load_data();
@@ -140,22 +136,18 @@ slice pack_addr_from_std(slice addr) {
     (balances, int result) = add_balances(balances, from_addr, amount);
 
     if (result != Vault::Ok()) {
-        return depositResponse(from, result, query_id);
+        throw(result);
     }
 
-    store_data((balances));
-    return depositResponse(from, Vault::Ok(), query_id);
-}
+    store_data(balances);
 
-;; send response for the deposit API call
-() withdrawResponse(slice to, int response, int query_id, int grams) impure {
-    return send_message(to, response, query_id, ApiOps::Withdraw(), grams, 64);
+    return send_message(from_addr, ApiEvent::Deposit(), query_id, 0, payload);
 }
 
 ;; deposit 'amount' grams to the 'sender'
-() withdraw(slice to, int query_id, int amount) impure {
+() withdraw(slice to, int query_id, int amount, slice payload) impure {
     if (amount == 0) {
-        return withdrawResponse(to, Vault::BadArg(), query_id, 0);
+        throw(Vault::BadArg());
     }
 
     (int initialized, cell balances) = load_data();
@@ -164,11 +156,12 @@ slice pack_addr_from_std(slice addr) {
     (balances, int result) = sub_balances(balances, to_addr, amount);
 
     if (result != Vault::Ok()) {
-        return withdrawResponse(to, result, query_id, 0);
+        throw(result);
     }
 
-    store_data((balances));
-    return withdrawResponse(to, Vault::Ok(), query_id, amount);
+    store_data(balances);
+
+    return send_message(to, ApiEvent::Withdraw(), query_id, amount, payload);
 }
 
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
@@ -195,14 +188,14 @@ slice pack_addr_from_std(slice addr) {
     ;; deposit grams
     ;; args ()
     if (op == ApiOps::Deposit()) {
-        return deposit(sender, query_id, msg_value);
+        return deposit(sender, query_id, msg_value, cs);
     }
 
     ;; withdraw grams
     ;; args (uint256 grams)
     if (op == ApiOps::Withdraw()) {
         int grams = in_msg~load_uint(256);
-        return withdraw(sender, query_id, grams);
+        return withdraw(sender, query_id, grams, cs);
     }
 
     throw(Vault::NoOp());
@@ -226,11 +219,11 @@ int balance() method_id {
 int balanceof(int from_network, int from_address) method_id {
 	(int initialized, cell balances) = load_data();
     slice packed = pack_std_addr(from_network, from_address);
-    (slice sender_record, int sender_found) = balances.dict_get?(267, packed);
+    (slice sender_record, int sender_found) = balances.dict_get?(264, packed);
     if (sender_found == 0) {
         return 0;
     }
 
-    return sender_record~load_uint(256);
+    return sender_record~load_grams();
 }
 

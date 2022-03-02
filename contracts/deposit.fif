@@ -1,0 +1,9 @@
+#!/usr/bin/env fift -s
+"TonUtil.fif" include
+"Asm.fif" include
+
+<b 1 32 u, 0 64 u, b> =: body_boc
+body_boc <s csr.
+body_boc 2 boc+>B
+"deposit.boc" tuck B>file
+."(Saved query to file " type .")" cr
