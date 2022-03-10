@@ -75,7 +75,7 @@ slice pack_addr_from_std(slice addr) {
         return (balances, Vault::WrongSender());
     }
 
-    int from_balance = from_record~load_uint(256);
+    int from_balance = from_record~load_grams();
 
     if (from_balance < amount) {
         return (balances, Vault::NoFunds());
@@ -148,7 +148,7 @@ int deposit_storage_fee() asm "21200000 PUSHINT"; ;; 0.0212 TON
     return send_message(from_addr, ApiEvent::Deposit(), query_id, 0);
 }
 
-;; deposit 'amount' grams to the 'sender'
+;; withdraw 'amount' grams to the 'sender'
 () withdraw(slice to, int query_id, int amount, slice payload) impure {
     if (amount == 0) {
         throw(Vault::BadArg());
@@ -198,7 +198,7 @@ int deposit_storage_fee() asm "21200000 PUSHINT"; ;; 0.0212 TON
     ;; withdraw grams
     ;; args (uint256 grams)
     if (op == ApiOps::Withdraw()) {
-        int grams = in_msg~load_uint(256);
+        int grams = cs~load_uint(64);
         return withdraw(sender, query_id, grams, cs);
     }
 

@@ -55,7 +55,7 @@ describe('TON Vault', () => {
         let res = await contract.sendInternalMessage(new InternalMessage({
             to: contractAddress,
             from: myAddress,
-            value: new BN(100),
+            value: new BN(100000000),
             bounce: false,
             body: new CommonMessageInfo({ body: new CellMessage(messageBody) })
         }))
@@ -69,7 +69,27 @@ describe('TON Vault', () => {
             [{ type: 'int', value: myAddress.workChain.toString(10) },
              { type: 'int', value: (new BN(myAddress.hash)).toString(10) }])
         expect(res.result[0]).toBeInstanceOf(BN)
-        expect(res.result[0].toNumber()).toEqual(100)
+        expect(res.result[0].toNumber()).toEqual(78800000)
+    })
+
+    it('should withdraw by user and check user balance', async () => {
+        let contract = await getContract(source)
+
+        let messageBody = new Cell()
+        messageBody.bits.writeUint(0, 32) // lead zeros
+        messageBody.bits.writeString("00000002") // op
+        messageBody.bits.writeString("0000000000000001") // query_id
+        messageBody.bits.writeString("0000000001000000") // amount 16777216 grams
+
+        let res = await contract.sendInternalMessage(new InternalMessage({
+            to: contractAddress,
+            from: myAddress,
+            value: 0,
+            bounce: false,
+            body: new CommonMessageInfo({ body: new CellMessage(messageBody) })
+        }))
+        console.log(res);
+        expect(res.exit_code).toEqual(0)
     })
 
     it('should send external message', async () => {
