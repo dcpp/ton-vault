@@ -91,7 +91,7 @@ slice pack_addr_from_std(slice addr) {
 ;; ---------------------------------- impure functions
 
 ;; send message to another account
-() send_message(slice to_addr, int action, int query_id, int grams, slice payload) impure {
+() send_message(slice to_addr, int action, int query_id, int grams) impure {
 	;; int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool 
 	;;                src:MsgAddress -> 011000 0x18
 	builder msg = begin_cell()
@@ -103,7 +103,7 @@ slice pack_addr_from_std(slice addr) {
 		.store_uint(action, 32)
 		.store_uint(query_id, 64);
 
-	send_raw_message(msg.end_cell(), 64);
+	send_raw_message(msg.end_cell(), 1);
 }
 
 ;; save data in the contract storage
@@ -124,16 +124,20 @@ slice pack_addr_from_std(slice addr) {
     return (initialized, dict);
 }
 
+int deposit_storage_fee() asm "21200000 PUSHINT"; ;; 0.0212 TON
+
 ;; deposit 'amount' grams to the 'sender'
 () deposit(slice from, int query_id, int amount, slice payload) impure {
-    if (amount == 0) {
+    int fee = deposit_storage_fee();
+
+    if (amount <= fee) {
         throw(Vault::BadArg());
     }
 
     (int initialized, cell balances) = load_data();
     slice from_addr = pack_addr_from_std(from);
 
-    (balances, int result) = add_balances(balances, from_addr, amount);
+    (balances, int result) = add_balances(balances, from_addr, amount - fee);
 
     if (result != Vault::Ok()) {
         throw(result);
@@ -141,7 +145,7 @@ slice pack_addr_from_std(slice addr) {
 
     store_data(balances);
 
-    return send_message(from_addr, ApiEvent::Deposit(), query_id, 0, payload);
+    return send_message(from_addr, ApiEvent::Deposit(), query_id, 0);
 }
 
 ;; deposit 'amount' grams to the 'sender'
@@ -161,7 +165,7 @@ slice pack_addr_from_std(slice addr) {
 
     store_data(balances);
 
-    return send_message(to, ApiEvent::Withdraw(), query_id, amount, payload);
+    return send_message(to, ApiEvent::Withdraw(), query_id, amount);
 }
 
 () recv_internal(int msg_value, cell in_msg_cell, slice in_msg) impure {
